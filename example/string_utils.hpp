@@ -147,7 +147,7 @@ namespace string_utils
         {
             if (startswith(next_part, "/") || endswith(result, "/"))
             {
-                result += next_part.substr(1); // 去掉下一个部分的开头 "/"
+                result += next_part; // 去掉下一个部分的开头 "/"
             }
             else
             {
