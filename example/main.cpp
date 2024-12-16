@@ -1,16 +1,22 @@
 #include <unistd.h>
 #include <sys/stat.h>
+#include <fstream>
 
 #include <ax_sys_api.h>
 #include <ax_ivps_api.h>
 #include <ax_engine_api.h>
 
 #include <opencv2/opencv.hpp>
+#include <nlohmann/json.hpp>
 
 #include "ax_algorithm_sdk.h"
 #include "cmdline.hpp"
 #include "string_utils.hpp"
 #include "putTextPlate.h"
+
+using json = nlohmann::json;
+
+static json image_arr_ = nlohmann::json::array();
 
 #define ALIGN_UP(x, align) ((((x) + ((align) - 1)) / (align)) * (align))
 
@@ -70,6 +76,19 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
         {
             cv::putText(image, std::to_string(box.label) + " " + std::to_string(box.track_id), cv::Point(box.bbox.x, box.bbox.y), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0), 2);
             printf("status: %d, track_id: %d label: %d score: %0.2f\n", box.label, box.track_id, box.label, box.score);
+
+            json bbox = nlohmann::json::array();
+            bbox.push_back(box.bbox.x);
+            bbox.push_back(box.bbox.y);
+            bbox.push_back(box.bbox.w);
+            bbox.push_back(box.bbox.h);
+
+            json item;
+            item["image_id"] = box.track_id;
+            item["category_id"] = box.label;
+            item["bbox"] = bbox;
+            item["score"] = box.score;
+            image_arr_.push_back(item);
         }
         break;
         default:
@@ -142,6 +161,15 @@ int main(int argc, char *argv[])
         cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
         auto out_path = string_utils::join(output_path, string_utils::basename(image_path));
         printf("out_path: %s\n", out_path.c_str());
+
+        std::string image_arr_str = image_arr_.dump(4, ' ');
+        std::string out_json_path = output_path + "output.json";
+        std::ofstream ofs(out_json_path.c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+        if (ofs.is_open()) {
+            ofs.write((const char*)image_arr_str.c_str(), image_arr_str.length());
+            ofs.close();
+        }
+
         cv::imwrite(out_path, image);
     }
     else
@@ -161,6 +189,15 @@ int main(int argc, char *argv[])
                 cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
                 auto out_path = string_utils::join(output_path, string_utils::basename(image_path_));
                 printf("out_path: %s\n", out_path.c_str());
+
+                std::string image_arr_str = image_arr_.dump(4, ' ');
+                std::string out_json_path = output_path + "output.json";
+                std::ofstream ofs(out_json_path.c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+                if (ofs.is_open()) {
+                    ofs.write((const char*)image_arr_str.c_str(), image_arr_str.length());
+                    ofs.close();
+                }
+
                 cv::imwrite(out_path, image);
             }
         }
