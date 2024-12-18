@@ -28,7 +28,7 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
 
     ax_result_t result;
     memset(&result, 0, sizeof(ax_result_t));
-    ax_algorithm_inference(handle, &image_rgb, &result);
+    ax_algorithm_detect(handle, &image_rgb, &result);
     ax_release_image(&image_rgb);
 
     for (int i = 0; i < result.n_objects; i++)
@@ -37,7 +37,7 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
         cv::rectangle(image, cv::Rect(box.bbox.x, box.bbox.y, box.bbox.w, box.bbox.h), cv::Scalar(255, 0, 0), 2);
         switch (result.model_type)
         {
-        case ax_model_type_person:
+        case ax_model_type_person_detection:
         {
             if (box.person_info.status == 3)
             {
@@ -48,7 +48,7 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
             printf("status: %d, track_id: %d\n", box.person_info.status, box.track_id);
         }
         break;
-        case ax_model_type_face_recognition:
+        case ax_model_type_face_detection:
         {
             cv::putText(image, std::to_string(box.track_id), cv::Point(box.bbox.x, box.bbox.y), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0), 2);
             for (size_t j = 0; j < AX_ALGORITHM_FACE_POINT_LEN; j++)
@@ -74,8 +74,8 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
         break;
         case ax_model_type_fire_smoke:
         {
-            cv::putText(image, std::to_string(box.label) + " " + std::to_string(box.track_id), cv::Point(box.bbox.x, box.bbox.y), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0), 2);
-            printf("status: %d, track_id: %d label: %d score: %0.2f\n", box.label, box.track_id, box.label, box.score);
+            cv::putText(image, std::to_string(box.fire_smoke_info.label) + " " + std::to_string(box.track_id), cv::Point(box.bbox.x, box.bbox.y), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0), 2);
+            printf("idx: %d label: %d, track_id: %d label: %d score: %0.2f\n", i ,box.label, box.track_id, box.fire_smoke_info.label, box.score);
 
             json bbox = nlohmann::json::array();
             bbox.push_back(box.bbox.x);
@@ -138,6 +138,7 @@ int main(int argc, char *argv[])
     ax_algorithm_init_t init_info;
     init_info.model_type = (ax_model_type_e)parser.get<int>("model_type");
     sprintf(init_info.model_file, model_path.c_str());
+    sprintf(init_info.license_path, "./ax_algorithm_license/");
     init_info.param = ax_algorithm_get_default_param();
 
     if (ax_algorithm_init(&init_info, &handle) != 0)
