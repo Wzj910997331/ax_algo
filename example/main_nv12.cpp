@@ -58,7 +58,7 @@ int inference(ax_algorithm_handle_t handle, std::vector<char> &image, int width,
         cv::rectangle(image_bgr, cv::Rect(box.bbox.x, box.bbox.y, box.bbox.w, box.bbox.h), cv::Scalar(255, 0, 0), 2);
         switch (result.model_type)
         {
-        case ax_model_type_person:
+        case ax_model_type_person_detection:
         {
             if (box.person_info.status == 3)
             {

@@ -1,0 +1,38 @@
+{
+    "images": [
+        {
+            "id": 1
+        },
+        {
+            "id": 2
+        }
+    ],
+    "annotations": [
+        {
+            "id": 1,
+            "image_id": 1,
+            "category_id": 3,
+            "bbox": [100.0, 150.0, 50.0, 60.0],
+            "iscrowd": 0,
+            "area": 3000.0
+        },
+        {
+            "id": 2,
+            "image_id": 2,
+            "category_id": 1,
+            "bbox": [50.0, 75.0, 30.0, 40.0],
+            "iscrowd": 0,
+            "area": 1200.0
+        }
+    ],
+    "categories": [
+        {
+            "id": 1,
+            "name": "cat"
+        },
+        {
+            "id": 3,
+            "name": "dog"
+        }
+    ]
+}

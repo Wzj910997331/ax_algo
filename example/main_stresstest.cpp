@@ -33,7 +33,7 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
         auto &box = result.objects[i];
         switch (result.model_type)
         {
-        case ax_model_type_person:
+        case ax_model_type_person_detection:
         {
             if (box.person_info.status == 3)
             {
@@ -42,7 +42,7 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
             printf("status: %d, track_id: %d\n", box.person_info.status, box.track_id);
         }
         break;
-        case ax_model_type_face_recognition:
+        case ax_model_type_face_detection:
         {
             printf("track_id: %d %0.2f\n", box.track_id, box.face_info.quality);
         }
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     signal(SIGINT, __sigExit);
     cmdline::parser parser;
     parser.add<std::string>("model", 'm', "model path", true);
-    parser.add<int>("model_type", 't', "model type 0:person 1:lpr", true);
+    parser.add<int>("model_type", 't', "model type 0:person detection 2:lpr 3:face detection 5:fire smoke", true);
     parser.add<std::string>("image", 'i', "image path", true);
     parser.parse_check(argc, argv);
 

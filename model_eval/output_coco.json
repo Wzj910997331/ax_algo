@@ -1,0 +1,46 @@
+{
+    "images": [
+        {
+            "id": 1,
+            "file_name": "fire_01.png"
+        },
+        {
+            "id": 2,
+            "file_name": "fire_02.jpg"
+        }
+    ],
+    "annotations": [
+        {
+            "id": 1,
+            "image_id": 1,
+            "category_id": 1,
+            "bbox": [
+                205,
+                10,
+                502,
+                575
+            ],
+            "iscrowd": 0,
+            "area": 288650
+        },
+        {
+            "id": 2,
+            "image_id": 2,
+            "category_id": 1,
+            "bbox": [
+                176,
+                57,
+                564,
+                444
+            ],
+            "iscrowd": 0,
+            "area": 250416
+        }
+    ],
+    "categories": [
+        {
+            "id": 1,
+            "name": "fire"
+        }
+    ]
+}
