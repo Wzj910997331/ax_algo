@@ -20,6 +20,8 @@ using json = nlohmann::json;
 
 static json image_arr_ = nlohmann::json::array();
 
+static int img_index_ = 1;
+
 int inference(ax_algorithm_handle_t handle, cv::Mat &image)
 {
     ax_image_t image_rgb;
@@ -84,7 +86,7 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
             bbox.push_back(box.bbox.h);
 
             json item;
-            item["image_id"] = box.track_id;
+            item["image_id"] = img_index_;
             item["category_id"] = box.label;
             item["bbox"] = bbox;
             item["score"] = box.score;
@@ -95,6 +97,24 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
             break;
         }
     }
+
+    // 没有检测到结果时
+    if (result.n_objects == 0) {
+        json bbox = nlohmann::json::array();
+        bbox.push_back(-1);
+        bbox.push_back(-1);
+        bbox.push_back(-1);
+        bbox.push_back(-1);
+
+        json item;
+        item["image_id"] = img_index_;
+        item["category_id"] = -1;
+        item["bbox"] = bbox;
+        item["score"] = -1;
+        image_arr_.push_back(item);
+    }
+
+    img_index_++;
 
     return 0;
 }
@@ -198,7 +218,7 @@ int main(int argc, char *argv[])
                     ofs.write((const char*)image_arr_str.c_str(), image_arr_str.length());
                     ofs.close();
                 }
-                
+
                 cv::imwrite(out_path, image);
             }
         }
