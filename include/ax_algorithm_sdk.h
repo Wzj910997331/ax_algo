@@ -76,8 +76,10 @@ extern "C"
 
     typedef enum _model_type_e
     {
-        ax_model_type_person,
+        ax_model_type_person_detection = 0,
+        ax_model_type_person_attr,
         ax_model_type_lpr,
+        ax_model_type_face_detection,
         ax_model_type_face_recognition,
         ax_model_type_fire_smoke,
         ax_model_type_end

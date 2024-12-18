@@ -51,7 +51,7 @@ std::string get_attr_str(std::string name, unsigned char lab)
     return "\033[1;30;32m" + g_attr_label_map[name][lab] + "\033[0m";
 }
 
-int inference(ax_algorithm_handle_t handle, cv::Mat &image)
+int inference(ax_algorithm_handle_t handle_det, ax_algorithm_handle_t handle_attr, cv::Mat &image)
 {
     ax_image_t image_rgb;
     ax_create_image(image.cols, image.rows, image.cols, ax_color_space_rgb, &image_rgb);
@@ -59,16 +59,15 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
 
     ax_result_t result;
     memset(&result, 0, sizeof(ax_result_t));
-    ax_algorithm_inference(handle, &image_rgb, &result);
+    ax_algorithm_inference(handle_det, &image_rgb, &result);
 
-#pragma omp parallel for schedule(dynamic, 4)
     for (int i = 0; i < result.n_objects; i++)
     {
         ax_body_attr_t body_attr = {0};
         auto &box = result.objects[i];
         // 设置track_id，用作历史状态跟踪
         body_attr.track_id = box.track_id;
-        int ret = ax_algorithm_get_body_attr(handle, &image_rgb, &box.bbox, &body_attr);
+        int ret = ax_algorithm_get_body_attr(handle_attr, &image_rgb, &box.bbox, &body_attr);
         if (ret != 0)
         {
             printf("track_id:%d get body attr failed, ret:%d\n", box.track_id, ret);
@@ -111,7 +110,7 @@ int inference(ax_algorithm_handle_t handle, cv::Mat &image)
         cv::rectangle(image, cv::Rect(box.bbox.x, box.bbox.y, box.bbox.w, box.bbox.h), cv::Scalar(255, 0, 0), 2);
         switch (result.model_type)
         {
-        case ax_model_type_person:
+        case ax_model_type_person_detection:
         {
             if (box.person_info.status == 3)
             {
@@ -164,17 +163,31 @@ int main(int argc, char *argv[])
     std::string image_path = parser.get<std::string>("image");
     std::string output_path = parser.get<std::string>("output");
 
-    ax_algorithm_handle_t handle;
-    ax_algorithm_init_t init_info;
-    init_info.model_type = ax_model_type_person;
-    sprintf(init_info.model_file, model_path.c_str());
-    init_info.param = ax_algorithm_get_default_param();
+    ax_algorithm_handle_t handle_det, handle_attr;
 
-    if (ax_algorithm_init(&init_info, &handle) != 0)
     {
-        return -1;
+        ax_algorithm_init_t init_info;
+        init_info.model_type = ax_model_type_person_detection;
+        sprintf(init_info.model_file, model_path.c_str());
+        init_info.param = ax_algorithm_get_default_param();
+
+        if (ax_algorithm_init(&init_info, &handle_det) != 0)
+        {
+            return -1;
+        }
     }
 
+    {
+        ax_algorithm_init_t init_info;
+        init_info.model_type = ax_model_type_person_attr;
+        sprintf(init_info.model_file, model_path.c_str());
+        init_info.param = ax_algorithm_get_default_param();
+
+        if (ax_algorithm_init(&init_info, &handle_attr) != 0)
+        {
+            return -1;
+        }
+    }
     // output_path exists
     if (access(output_path.c_str(), 0) != 0)
     {
@@ -187,7 +200,7 @@ int main(int argc, char *argv[])
         // cv::resize(image, image, cv::Size(1920, 1080));
         cv::resize(image, image, cv::Size(ALIGN_UP(image.cols, 128), ALIGN_UP(image.rows, 128)));
         cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-        inference(handle, image);
+        inference(handle_det, handle_attr, image);
         cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
         auto out_path = string_utils::join(output_path, string_utils::basename(image_path));
         printf("out_path: %s\n", out_path.c_str());
@@ -207,7 +220,7 @@ int main(int argc, char *argv[])
                 // cv::resize(image, image, cv::Size(1920, 1080));
                 cv::resize(image, image, cv::Size(ALIGN_UP(image.cols, 128), ALIGN_UP(image.rows, 128)));
                 cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-                inference(handle, image);
+                inference(handle_det, handle_attr, image);
                 cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
                 auto out_path = string_utils::join(output_path, string_utils::basename(image_path_));
                 printf("out_path: %s\n", out_path.c_str());
@@ -215,7 +228,8 @@ int main(int argc, char *argv[])
             }
         }
     }
-    ax_algorithm_deinit(handle);
+    ax_algorithm_deinit(handle_det);
+    ax_algorithm_deinit(handle_attr);
     AX_ENGINE_Deinit();
     AX_IVPS_Deinit();
     AX_SYS_Deinit();
