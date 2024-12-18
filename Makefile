@@ -3,7 +3,8 @@
 .PHONY: all clean
 
 # 定义 SDK 目录路径
-SDK_DIR := ../../aX650_SDK_V1.45.0_P39_20240830020829_NO409
+CUR_PATH := $(shell pwd)
+SDK_DIR := $(abspath $(CUR_PATH)/../ai-box-system)
 
 # 定义 example 子目录路径
 EXAMPLE_DIR := example
