@@ -15,26 +15,26 @@
             "image_id": 1,
             "category_id": 1,
             "bbox": [
-                95,
-                152,
-                48,
-                60
+                205,
+                10,
+                502,
+                575
             ],
             "iscrowd": 0,
-            "area": 2880.0
+            "area": 288650
         },
         {
             "id": 2,
             "image_id": 2,
             "category_id": 1,
             "bbox": [
-                48,
-                75,
-                30,
-                40
+                176,
+                57,
+                564,
+                444
             ],
             "iscrowd": 0,
-            "area": 1200.0
+            "area": 250416
         }
     ],
     "categories": [

@@ -41,6 +41,7 @@ extern "C"
         ax_error_code_run_recog_fail,
         ax_error_code_run_invalid_index,
         ax_error_code_run_type_not_match,
+        ax_error_code_run_no_implement,
     } ax_error_code_e;
 
     typedef enum _color_space_e
@@ -212,6 +213,7 @@ extern "C"
 
     typedef struct _algorithm_init_t
     {
+        char license_path[256];
         char model_file[256];
         ax_model_type_e model_type;
         ax_algorithm_param_t param;
@@ -219,81 +221,112 @@ extern "C"
 
     int ax_algorithm_init(ax_algorithm_init_t *init_info, ax_algorithm_handle_t *handle);
     void ax_algorithm_deinit(ax_algorithm_handle_t handle);
-    int ax_algorithm_inference(ax_algorithm_handle_t handle, ax_image_t *image, ax_result_t *result);
+
+    /**
+     * @brief: 与ax_algorithm_track的区别是不进行跟踪, 一般只用作精度验证，或者人脸注册的检测阶段
+     * @param[in] handle: 算法句柄
+     * @param[in] image: 图像数据
+     * @param[out] result: 检测结果
+     * @return 0 成功，非零表示失败。
+     */
+    int ax_algorithm_detect(ax_algorithm_handle_t handle, ax_image_t *image, ax_result_t *result);
+    /**
+     * @brief: 检测+跟踪等一系列算法
+     * @param[in] handle: 算法句柄
+     * @param[in] image: 图像数据
+     * @param[out] result: 跟踪结果
+     * @return 0 成功，非零表示失败。
+     */
+    int ax_algorithm_track(ax_algorithm_handle_t handle, ax_image_t *image, ax_result_t *result);
+
 
     ax_model_type_e ax_algorithm_get_model_type(ax_algorithm_handle_t handle);
 
+    /**
+     * @brief: 获取算法参数
+     * @param[in] handle: 算法句柄
+     * @return 算法参数
+     */
     ax_algorithm_param_t ax_algorithm_get_param(ax_algorithm_handle_t handle);
+    /**
+     * @brief: 设置算法参数
+     * @param[in] handle: 算法句柄
+     * @param[in] param: 算法参数
+     */
     void ax_algorithm_set_param(ax_algorithm_handle_t handle, ax_algorithm_param_t *param);
+    /**
+     * @brief: 获取默认算法参数
+     * @return 算法参数
+     */
     ax_algorithm_param_t ax_algorithm_get_default_param();
 
     /**
-     * @brief: set log level
-     * @param[in] level: small than level will be print, large than level will be ignored
+     * @brief: 设置日志级别
+     * @param[in] level: 小于level的日志将被打印，大于level的日志将被忽略
      */
     void ax_algorithm_set_log_level(ax_log_level_e level);
 
     /**
-     * @brief: save debug image
-     * @param[in] handle: algorithm handle
-     * @param[in] enable: 1: enable save debug image, 0: disable
+     * @brief: 保存调试图像
+     * @param[in] handle: 算法句柄
+     * @param[in] enable: 1: 启用保存调试图像, 0: 禁用
      */
     void ax_algorithm_save_debug_image(ax_algorithm_handle_t handle, int enable);
 
     /**
-     * @brief: convert plate_id to string
-     * @param[in] plate_id: plate_id array
-     * @param[in] len: length of plate_id array
-     * @param[out] plate_str: string of plate_id
-     * @return 0 success, non-zero on failure.
+     * @brief: 将 plate_id 转换为字符串
+     * @param[in] plate_id: plate_id 数组
+     * @param[in] len: plate_id 数组的长度
+     * @param[out] plate_str: plate_id 的字符串
+     * @return 0 成功，非零表示失败。
      */
     int ax_algorithm_get_plate_str(int *plate_id, int len, char *plate_str);
 
     /**
-    @brief: get the body attribute of the detected person
-    @param[in] handle: algorithm handle
-    @param[in] image: image data
-    @param[in] bbox: bounding box of the detected person
-    @param[out] body_attr: body attribute of the detected person
-    @return 0 success, non-zero on failure.
-    */
+     * @brief: 获取检测到的人体属性
+     * @param[in] handle: 算法句柄
+     * @param[in] image: 图像数据
+     * @param[in] bbox: 检测到的人体 bounding box
+     * @param[out] body_attr: 检测到的人体属性
+     * @return 0 成功，非零表示失败。
+     */
     int ax_algorithm_get_body_attr(ax_algorithm_handle_t handle, ax_image_t *image, ax_bbox_t *bbox, ax_body_attr_t *body_attr);
 
     /**
-    @brief: get the 512-dim feature of the detected face
-    @param[in] handle: algorithm handle
-    @param[in] image: image data
-    @param[in] result: detection result
-    @param[in] idx: index of the detected face in the result.objects,
-                    if idx is -1, then it means no face is detected,
-                    this function will auto detect face in the single image and get the feature, but no track
-    @param[out] feature: 512-dim feature of the detected face
-    @return 0 success, non-zero on failure.
-    */
+     * @brief: 获取检测到的人脸特征
+     * @param[in] handle: 算法句柄
+     * @param[in] image: 图像数据
+     * @param[in] result: 检测结果
+     * @param[in] idx: result.objects 中的人脸索引
+     *                  如果 idx 是 -1, 则表示此图片还没有进行人脸检测
+     *                  这个函数将自动检测图像中的人脸并获取特征，但不进行跟踪
+     * @param[out] feature: 512维的人脸特征
+     * @return 0 成功，非零表示失败。
+     */
     int ax_algorithm_get_face_feature(ax_algorithm_handle_t handle, ax_image_t *image, ax_result_t *result, int idx, float feature[AX_ALGORITHM_FACE_FEATURE_LEN]);
 
     /**
-     * @brief: Compare two face features.
-     * @param[in] a: First face feature array.
-     * @param[in] b: Second face feature array.
-     * @return A float representing the similarity score between the two face features.
+     * @brief: 比较两个人脸特征
+     * @param[in] a: 第一个人脸特征数组
+     * @param[in] b: 第二个人脸特征数组
+     * @return 两个人脸特征之间的相似度评分
      */
     float ax_algorithm_face_compare(float a[AX_ALGORITHM_FACE_FEATURE_LEN], float b[AX_ALGORITHM_FACE_FEATURE_LEN]);
 
     /**
-     * @brief: Create an image with specified parameters.
-     * @param[in] width: Width of the image.
-     * @param[in] height: Height of the image.
-     * @param[in] stride: Stride of the image.
-     * @param[in] color: Color space of the image (e.g., NV12, NV21, BGR, RGB).
-     * @param[out] image: Pointer to the image structure to be initialized.
-     * @return 0 on success, non-zero on failure.
+     * @brief: 根据指定的参数创建一幅图像。
+     * @param[in] width: 图像的宽度。
+     * @param[in] height: 图像的高度。
+     * @param[in] stride: 图像的步幅。
+     * @param[in] color: 图像的颜色空间 (例如，NV12, NV21, BGR, RGB)。
+     * @param[out] image: 指向图像结构体的指针，用于初始化。
+     * @return 成功时返回 0，失败时返回非零值。
      */
     int ax_create_image(int width, int height, int stride, ax_color_space_e color, ax_image_t *image);
 
     /**
-     * @brief: Release an image created by ax_create_image.
-     * @param[in] image: Pointer to the image structure to be released.
+     * @brief: 释放ax_create_image创建的一幅图像。
+     * @param[in] image: 指向要释放的图像结构体的指针。
      */
     void ax_release_image(ax_image_t *image);
 
